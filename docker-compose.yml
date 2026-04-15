@@ -1,40 +1,95 @@
 services:
   mongo:
-    image: mongo:8.0-noble
-    # https://github.com/robinkarlberg/transfer.zip-web/issues/42#issue-3242349311
-    # Use an older mongodb version if your CPU does not support AVX instructions.
-    # image: mongo:4.4
+    image: mongo:4.4
     restart: unless-stopped
     volumes:
-      - ./_db:/data/db
+      - mongo_data:/data/db
     ports:
-      # I made mongodb listen on localhost here to enable MongoDB compass to inspect the database
       - 127.0.0.1:${MONGODB_FORWARD_PORT:-27017}:27017
-    env_file:
-      - .env
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
 
   next:
     build: next
     restart: unless-stopped
-    env_file:
-      - .env
-      - next/.env
+    depends_on:
+      - mongo
     ports:
       - 127.0.0.1:${WEB_SERVER_FORWARD_PORT:-9001}:9001
-    
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGODB_HOST_PORT: ${MONGODB_HOST_PORT:-27017}
+      MONGODB_FORWARD_PORT: ${MONGODB_FORWARD_PORT:-27017}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME}
+      WEB_SERVER_FORWARD_PORT: ${WEB_SERVER_FORWARD_PORT:-9001}
+      SIGNALING_SERVER_FORWARD_PORT: ${SIGNALING_SERVER_FORWARD_PORT:-9002}
+      CADDY_DOMAIN: ${CADDY_DOMAIN:-}
+      CADDY_ACME_EMAIL: ${CADDY_ACME_EMAIL:-}
+
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+      NEXT_PUBLIC_CONTACT_EMAIL: ${NEXT_PUBLIC_CONTACT_EMAIL:-}
+      NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
+      NEXT_PUBLIC_AUTHOR: ${NEXT_PUBLIC_AUTHOR:-}
+      NEXT_PUBLIC_AUTHOR_URL: ${NEXT_PUBLIC_AUTHOR_URL:-}
+      NEXT_PUBLIC_DISCORD_URL: ${NEXT_PUBLIC_DISCORD_URL:-}
+      NEXT_PUBLIC_BLUESKY_URL: ${NEXT_PUBLIC_BLUESKY_URL:-}
+      NEXT_PUBLIC_TWITTER_URL: ${NEXT_PUBLIC_TWITTER_URL:-}
+      NEXT_PUBLIC_GITHUB_URL: ${NEXT_PUBLIC_GITHUB_URL:-}
+      NEXT_PUBLIC_SELFHOST: ${NEXT_PUBLIC_SELFHOST:-true}
+      NEXT_PUBLIC_DL_DOMAIN: ${NEXT_PUBLIC_DL_DOMAIN:-}
+      UMAMI_ANALYTICS_WEBSITE_ID: ${UMAMI_ANALYTICS_WEBSITE_ID:-}
+      SIGMA_SEO_SITE_ID: ${SIGMA_SEO_SITE_ID:-}
+
+      SITE_URL: ${SITE_URL}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_BUCKET_NAME: ${S3_BUCKET_NAME:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+
+      STRIPE_SK: ${STRIPE_SK:-}
+      STRIPE_SUB_STARTER_ID: ${STRIPE_SUB_STARTER_ID:-}
+      STRIPE_SUB_PRO_ID: ${STRIPE_SUB_PRO_ID:-}
+      STRIPE_SUB_STARTER_PRICE_ID: ${STRIPE_SUB_STARTER_PRICE_ID:-}
+      STRIPE_SUB_STARTER_PRICE_YEARLY_ID: ${STRIPE_SUB_STARTER_PRICE_YEARLY_ID:-}
+      STRIPE_SUB_PRO_PRICE_ID: ${STRIPE_SUB_PRO_PRICE_ID:-}
+      STRIPE_SUB_PRO_PRICE_YEARLY_ID: ${STRIPE_SUB_PRO_PRICE_YEARLY_ID:-}
+      STRIPE_WHSEC: ${STRIPE_WHSEC:-}
+
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET:-}
+
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_DOMAIN: ${RESEND_DOMAIN:-}
+
+      MEGADESK_IDENTITY_SECRET: ${MEGADESK_IDENTITY_SECRET:-}
+      MEGADESK_PUB: ${MEGADESK_PUB:-}
+
   signaling-server:
     build: signaling-server
     restart: unless-stopped
     ports:
       - 127.0.0.1:${SIGNALING_SERVER_FORWARD_PORT:-9002}:9002
-    
+
   worker:
     build: worker
     restart: unless-stopped
-    env_file:
-      - .env
+    depends_on:
+      - mongo
     volumes:
       - worker_data:/worker_data
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGODB_HOST_PORT: ${MONGODB_HOST_PORT:-27017}
+      MONGODB_FORWARD_PORT: ${MONGODB_FORWARD_PORT:-27017}
+      MONGODB_DB_NAME: ${MONGODB_DB_NAME}
 
 volumes:
   worker_data: {}
+  mongo_data: {}
